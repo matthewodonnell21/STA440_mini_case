@@ -1,0 +1,11 @@
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+data <- read.csv("Durham_2022_Resident_Survey_Raw_Data.csv")
+```
+
+
