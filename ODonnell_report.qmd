@@ -1,0 +1,14 @@
+---
+title: "Mini Case Study"
+author: "Matthew O'Donnell"
+date: "August 31, 2024"
+format: pdf
+---
+
+# Introduction
+
+# Methodology
+
+# Results
+
+# Discussion

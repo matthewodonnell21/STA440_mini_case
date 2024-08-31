@@ -1,11 +1,28 @@
 
 ```{r}
 library(tidyverse)
+library(ggplot2)
 ```
 
 
 ```{r}
-data <- read.csv("Durham_2022_Resident_Survey_Raw_Data.csv")
+data = read.csv("Durham_2022_Resident_Survey_Raw_Data.csv")
+model_data = data[, c(66, 184, 208, 209, 212, 214, 215, 216, 217, 218, 219, 
+                      221)]
+
+colnames(model_data) = c("housing_cost_pct", "durham_satisfaction", 
+                         "years_in_durham", "age", "rent_or_own", 
+                         "race_asian_indian", "race_black", 
+                         "race_american_indian", "race_white", 
+                         "race_pacific_islander",
+                         "race_latino", "income")
+
+model_data = model_data %>% 
+  filter(durham_satisfaction != 9)
 ```
 
+
+```{r}
+ggplot(data = data, aes(x = ))
+```
 
