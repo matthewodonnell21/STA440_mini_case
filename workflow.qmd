@@ -7,22 +7,85 @@ library(ggplot2)
 
 ```{r}
 data = read.csv("Durham_2022_Resident_Survey_Raw_Data.csv")
-model_data = data[, c(66, 184, 208, 209, 212, 214, 215, 216, 217, 218, 219, 
-                      221)]
+model_data = data[, c(37, 66, 184, 208, 212, 213, 214, 215, 216, 217, 221)]
 
-colnames(model_data) = c("housing_cost_pct", "durham_satisfaction", 
-                         "years_in_durham", "age", "rent_or_own", 
-                         "race_asian_indian", "race_black", 
+colnames(model_data) = c("child_in_DPS", 
+                         "housing_cost_pct", "durham_satisfaction", 
+                         "years_in_durham", "rent_or_own",
+                         "latino", "race_asian_indian", "race_black", 
                          "race_american_indian", "race_white", 
-                         "race_pacific_islander",
-                         "race_latino", "income")
+                         "income")
 
 model_data = model_data %>% 
-  filter(durham_satisfaction != 9)
+  filter(durham_satisfaction != 9 & !is.na(years_in_durham) & income != 9)
+
+model_data = model_data %>% 
+  mutate(Satisfied = if_else(durham_satisfaction != 1 &  
+                               durham_satisfaction != 2, 
+                             1, 0),
+         Income = income,
+         Housing_over_30pct = if_else(housing_cost_pct == 1, "Yes", 
+                                      if_else(housing_cost_pct == 2, "No", "No Response")),
+         DPS = if_else(child_in_DPS == 1, 1, 0, missing = 0),
+         Own = if_else(rent_or_own == 1, 1, 0),
+         Asian_or_Indian = if_else(race_asian_indian == 1, 1, 0, missing = 0),
+         Black = if_else(race_black == 2, 1, 0, missing = 0),
+         American_Indian = if_else(race_american_indian == 3, 1, 0, missing = 0),
+         White = if_else(race_white == 4, 1, 0, missing = 0),
+         Latino_Hispanic = if_else(latino == 1, 1, 0, missing = 0),
+         races_reported = Asian_or_Indian + Black + American_Indian + White + Latino_Hispanic)
+
+model_data %>% count(durham_satisfaction, Satisfied)
+
+model_data %>% count(races_reported)
 ```
+
+```{r}
+model_data %>% group_by(durham_satisfaction) %>% 
+  summarize(avg_years_in_durham = mean(years_in_durham, na.rm = TRUE)) %>% 
+  ggplot(aes(x = durham_satisfaction, y = avg_years_in_durham)) + 
+  geom_col()
+
+model_data %>% ggplot(aes(x = durham_satisfaction)) +
+  geom_bar()
+
+model_data %>% 
+  filter(Satisfied == 1) %>% 
+  ggplot(aes(x = Income)) +
+  geom_bar()
+
+model_data %>% 
+  filter(Satisfied == 0) %>% 
+  ggplot(aes(x = Income)) +
+  geom_bar()
+
+model_data %>% ggplot(aes(x = years_in_durham)) +
+  geom_histogram(bins = 10)
+
+model_data %>% 
+  filter(races_reported == 0) %>% 
+  ggplot(aes(x = durham_satisfaction)) +
+  geom_bar()
+
+model_data %>% 
+  filter(races_reported == 1) %>% 
+  ggplot(aes(x = Satisfied)) +
+  geom_bar()
+```
+
 
 
 ```{r}
-ggplot(data = data, aes(x = ))
+model = glm(Satisfied ~ years_in_durham + Income + Housing_over_30pct + Own + 
+              DPS + Asian_or_Indian + Black + White + Latino_Hispanic, data = model_data, family = binomial)
+
+summary(model)
 ```
+
+```{r}
+library(MASS)
+
+model_data %>% count(Own)
+```
+
 

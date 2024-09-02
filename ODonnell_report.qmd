@@ -7,7 +7,69 @@ format: pdf
 
 # Introduction
 
+The city of Durham has changed rapidly in recent years due to its increasing prominence as an educational hub. The city collects data annually to assess its residents' opinions on a variety of topics related to the state of the city. Due to the rapid changes in the city and influx of new residents, it might be important to investigate the sentiment of Durham's longtime residents. This case study finds that people who've lived in Durham for longer are less likely to be satisfied with the city as a place to live.
+
 # Methodology
+
+The options for scoring Durham as a place to live are as follows:
+
+1.  Poor
+
+2.  Below Average
+
+3.  Neutral
+
+4.  Good
+
+5.  Excellent
+
+```{r}
+#| echo: false 
+#| include: false
+library(tidyverse)
+```
+
+
+```{r}
+#| echo: false 
+
+data = read.csv("Durham_2022_Resident_Survey_Raw_Data.csv")
+model_data = data[, c(37, 66, 184, 208, 212, 213, 214, 215, 216, 217, 221)]
+
+colnames(model_data) = c("child_in_DPS", 
+                         "housing_cost_pct", "durham_satisfaction", 
+                         "years_in_durham", "rent_or_own",
+                         "latino", "race_asian_indian", "race_black", 
+                         "race_american_indian", "race_white", 
+                         "income")
+
+model_data = model_data %>% 
+  filter(durham_satisfaction != 9 & !is.na(years_in_durham) & income != 9)
+
+model_data %>% group_by(durham_satisfaction) %>% 
+  summarize(avg_years_in_durham = mean(years_in_durham, na.rm = TRUE)) %>% 
+  ggplot(aes(x = durham_satisfaction, y = avg_years_in_durham)) + 
+  geom_col()
+
+model_data = model_data %>% 
+  mutate(Satisfied = if_else(durham_satisfaction != 1 &  
+                               durham_satisfaction != 2, 
+                             1, 0),
+         Income = income,
+         Housing_over_30pct = if_else(housing_cost_pct == 1, "Yes", 
+                                      if_else(housing_cost_pct == 2, "No", "No Response")),
+         DPS = if_else(child_in_DPS == 1, 1, 0, missing = 0),
+         Own = if_else(rent_or_own == 1, 1, 0),
+         Asian_or_Indian = if_else(race_asian_indian == 1, 1, 0, missing = 0),
+         Black = if_else(race_black == 2, 1, 0, missing = 0),
+         American_Indian = if_else(race_american_indian == 3, 1, 0, missing = 0),
+         White = if_else(race_white == 4, 1, 0, missing = 0),
+         Latino_Hispanic = if_else(latino == 1, 1, 0, missing = 0)) %>% 
+  select(durham_satisfaction, Satisfied, Income, Housing_over_30pct, DPS, Own,
+         Asian_or_Indian, Black, American_Indian, White, Latino_Hispanic)
+```
+
+
 
 # Results
 
