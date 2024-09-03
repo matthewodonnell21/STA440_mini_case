@@ -1,36 +1,29 @@
 ---
 title: "Mini Case Study"
 author: "Matthew O'Donnell"
-date: "August 31, 2024"
 format: pdf
 ---
 
-# Introduction
+## Introduction
 
 The city of Durham has changed rapidly in recent years due to its increasing prominence as an educational hub. The city collects data annually to assess its residents' opinions on a variety of topics related to the state of the city. Due to the rapid changes in the city and influx of new residents, it might be important to investigate the sentiment of Durham's longtime residents. This case study finds that people who've lived in Durham for longer are less likely to be satisfied with the city as a place to live.
 
-# Methodology
+## Methodology
 
 The options for scoring Durham as a place to live are as follows:
 
-1.  Poor
-
-2.  Below Average
-
-3.  Neutral
-
-4.  Good
-
-5.  Excellent
+**1.** Poor **2.** Below Average **3.** Neutral **4.** Good **5.** Excellent
 
 ```{r}
 #| echo: false 
 #| include: false
 library(tidyverse)
+library(patchwork)
+library(broom)
+library(kableExtra)
 ```
 
-
-```{r}
+```{r, fig.width=6, fig.height=3}
 #| echo: false 
 
 data = read.csv("Durham_2022_Resident_Survey_Raw_Data.csv")
@@ -38,39 +31,82 @@ model_data = data[, c(37, 66, 184, 208, 212, 213, 214, 215, 216, 217, 221)]
 
 colnames(model_data) = c("child_in_DPS", 
                          "housing_cost_pct", "durham_satisfaction", 
-                         "years_in_durham", "rent_or_own",
+                         "tenure", "rent_or_own",
                          "latino", "race_asian_indian", "race_black", 
                          "race_american_indian", "race_white", 
                          "income")
 
 model_data = model_data %>% 
-  filter(durham_satisfaction != 9 & !is.na(years_in_durham) & income != 9)
-
-model_data %>% group_by(durham_satisfaction) %>% 
-  summarize(avg_years_in_durham = mean(years_in_durham, na.rm = TRUE)) %>% 
-  ggplot(aes(x = durham_satisfaction, y = avg_years_in_durham)) + 
-  geom_col()
+  filter(durham_satisfaction != 9 & !is.na(tenure) & income != 9)
 
 model_data = model_data %>% 
   mutate(Satisfied = if_else(durham_satisfaction != 1 &  
                                durham_satisfaction != 2, 
                              1, 0),
-         Income = income,
-         Housing_over_30pct = if_else(housing_cost_pct == 1, "Yes", 
-                                      if_else(housing_cost_pct == 2, "No", "No Response")),
+         housing = if_else(housing_cost_pct == 1, "Yes", 
+                                      if_else(housing_cost_pct == 2, "No", 
+                                              "No Response")),
          DPS = if_else(child_in_DPS == 1, 1, 0, missing = 0),
-         Own = if_else(rent_or_own == 1, 1, 0),
-         Asian_or_Indian = if_else(race_asian_indian == 1, 1, 0, missing = 0),
+         own = if_else(rent_or_own == 1, 1, 0, missing = 0),
+         Asian_Indian = if_else(race_asian_indian == 1, 1, 0, missing = 0),
          Black = if_else(race_black == 2, 1, 0, missing = 0),
-         American_Indian = if_else(race_american_indian == 3, 1, 0, missing = 0),
          White = if_else(race_white == 4, 1, 0, missing = 0),
          Latino_Hispanic = if_else(latino == 1, 1, 0, missing = 0)) %>% 
-  select(durham_satisfaction, Satisfied, Income, Housing_over_30pct, DPS, Own,
-         Asian_or_Indian, Black, American_Indian, White, Latino_Hispanic)
+  select(durham_satisfaction, Satisfied, income, housing, DPS, own,
+         Asian_Indian, Black, White, Latino_Hispanic,
+         tenure)
+
+chart1 = model_data %>% group_by(durham_satisfaction) %>% 
+  summarize(avg_years_in_durham = mean(tenure, na.rm = TRUE)) %>% 
+  ggplot(aes(x = durham_satisfaction, y = avg_years_in_durham)) + 
+  geom_col() +
+  labs(title = "Avg. Durham Tenure", x = "Satisfaction Level", 
+       y = "Avg. Years Lived in Durham") + 
+  theme_bw()
+  
+
+chart2 = model_data %>% ggplot(aes(x = durham_satisfaction)) +
+  geom_bar() + 
+  labs(title = "Satisfaction with Durham", x = "Satisfaction Level", 
+       y = "Average Age") + 
+  theme_bw()
+
+chart2 + chart1
 ```
 
+The left-hand chart shows that the majority of survey respondents report positive opinions of Durham as a place to live. However, to generalize this to the Durham population, we would need to be confident that the respondents are a representative sample of Durhamites.
 
+The right-hand chart shows the average tenure in Durham for respondents who reported each satisfaction level. The fact that lower levels of satisfaction seems to come from more tenured respondents is the first evidence a relationship. A standard linear regression or an ordinal regression would require that a similar relationship with age exists between each satisfaction level. However, in this chart, we see that the relationship does not seem to hold between levels 3, 4, and 5. Therefore, we will proceed with a logistic regression where out outcome variable will be a binary outcome of people satisfied with Durham (levels 3, 4, and 5) and unsatisfied (levels 1 and 2). In order to address potential confounders, other variables should be included in the model. This will better assess the strength of any relationship between tenure and satisfaction.
+
+This data is very raw, as many respondents only answer some of the questions. For Durham tenure and Durham satisfaction, missing responses will need to be removed. These are our two main variables of interest, and missing values cannot tell us much without complicated imputation. For any other variables that might be included in the model, missing categorical inputs can be retained as their own category, while missing numeric or ordinal inputs will need to be removed.
+
+**Model Equation**
+$$log(\frac{p_i}{1-p_i}) = \beta_0 + \beta_1 * tenure_i + \beta_2 * income_i + \beta_3 * housing_i + \beta_4 * own_i + \beta_5 * DPS_i + \sum_{j=6}^9\beta_j*race_{ij}$$
+
+-   $p_i$ represents the probability that survey respondent $i$ answered with a 3, 4, or 5 when asked to rate the Durham community as a place to live. Respondents who did not answer this question were removed.
+-   $tenure_i$ represents the length of time survey respondent $i$ has lived in Durham. Respondents who did not answer this question were removed.
+-   $income_i$ represents which of four income brackets respondent $i$ falls into. Respondents who did not answer this question were removed.
+-   $housing_i$ is the binary outcome of whether housing costs exceed 30% monthly income of respondent $i$. Missing values take their own category. 
+-   $own_i$ represents whether respondent $i$ owns their home. Missing values were assigned a 0 due to their small number. 
+-   $DPS_i$ represents whether respondent $i$ currently has children in Durham public schools. Respondents who may have skipped this question would be assigned a 0. 
+-   $race_{ij}$ represents whether respondent $i$ indicated they identify as the $j^{th}$ race. Respondents who skipped this question would have a 0 for all races. The effect for American Indian and Pacific Islander was not included due to the small number of applicants.  
 
 # Results
 
+```{r}
+#| echo: false
+model = glm(Satisfied ~ tenure + income + housing + own + 
+              DPS + Asian_Indian + Black + White + Latino_Hispanic, data = model_data, family = binomial)
+
+tidy(model) %>% 
+  select(term, estimate, p.value) %>% 
+  kable(caption = "Model Estimates")
+```
+
 # Discussion
+
+With a $p < \alpha = 0.05$, our model results show a statistically significant negative relationship between tenure and satisfaction with Durham. In fact, it is the only model covariate with a statistical significant effect (although multicollinearity between inputs like $income$, $housing$, and $own$ might be diluting each others' effects). For each additional year of living in Durham, the estimated log-odds of the respondent being satisfied with Durham decreases by roughly 0.015 (holding all other covariates constant). 
+
+The main implication of these results is that in a rapidly changing metropolitan area, those who have lived in Durham longer are feeling more of the growing pains. In any future urban planning decisions, it will be important to consider the effect on those who have lived in Durham for longer.  
+However, with less than 8% of total respondents reporting that they were unsatisfied, it is worth questioning the overall importance of this finding and whether the survey respondents are representative of the Durham population. For example, it is worth noting that all races had a positive coefficient estimate due to the fact that the small number of unsatisfied respondents happened to be more likely not to report their race. This seems questionable, and perhaps serves as a motivation for verifying these results over a larger sample size. 
+
