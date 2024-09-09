@@ -116,9 +116,9 @@ tidy(model) %>%
 
 ## Discussion
 
-With a $p < \alpha = 0.05$, the model results show a statistically significant negative relationship between tenure and satisfaction with Durham. In fact, it is the only model covariate with a statistical significant effect (although multicollinearity between inputs like $income$, $housing$, and $own$ might be diluting each others' effects). The results tell us that for respondents who have identical respondents for all other inputs (same income bracket, same race, etc.), each additional year of living in Durham decreases the estimated log-odds being satisfied with Durham decreases by roughly 0.015. 
+With a $p < \alpha = 0.05$, the model results show a statistically significant negative relationship between tenure and satisfaction with Durham. In fact, it is the only model covariate with a statistical significant effect (although multicollinearity between inputs like $income$, $housing$, and $own$ might be diluting each others' effects). The results tell us that for respondents who are identical across all other inputs (same income bracket, same race(s), etc.), each additional year of living in Durham decreases the estimated log-odds being satisfied with Durham by roughly 0.015. 
 
-The main implication of these results is that in a rapidly changing metropolitan area, those who have lived in Durham longer might be feeling more of the growing pains. In future urban planning, it will be important to include voices of tenured residents in the decision making. 
+The main implication of these results is that in a rapidly changing metropolitan area, those who have lived in Durham longer might be feeling more of the growing pains. In future urban planning, it will be important to include the voices of tenured residents in decision-making. 
 
 However, since fewer than 8% of all respondents reported that they were unsatisfied, it is worth questioning the overall importance of this finding. It is possible that by arbitrarily binarizing this highly imbalanced dataset to best match the relationship between tenure and satisfaction, it could increase the chances of indentifying a spurious relationship as significant. To better confirm the results, a larger sample of data could be collected with more complete responses.  
 
